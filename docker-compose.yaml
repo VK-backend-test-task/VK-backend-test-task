@@ -1,0 +1,43 @@
+services:
+  postgres:
+    image: postgres:alpine
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: postgrespass
+    networks:
+      - pinger
+    volumes:
+      - postgres:/var/lib/postgresql
+  backend:
+    build: ./backend
+    environment:
+      DB_URL: postgresql://postgres:postgrespass@postgres:5432/postgres?sslmode=disable
+    networks:
+      - pinger
+    depends_on:
+      - postgres
+  pinger:
+    build: ./pinger
+    environment:
+      API_HOST: backend:3001
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - pinger
+    depends_on:
+      - backend
+  frontend:
+    build: ./frontend
+    ports:
+      - 80:3000
+    environment:
+      API_HOST: backend:3001
+    networks:
+      - pinger
+    depends_on:
+      - backend
+networks:
+  pinger:
+volumes:
+  postgres:
